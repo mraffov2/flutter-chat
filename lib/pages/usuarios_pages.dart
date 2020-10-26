@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:pull_to_refresh/pull_to_refresh.dart';
 
+import 'package:flutter_chat/services/auth_service.dart';
 import 'package:flutter_chat/models/usuario.dart';
 
 class UsuariosPage extends StatefulWidget {
@@ -12,13 +14,35 @@ class _UsuariosPageState extends State<UsuariosPage> {
   RefreshController _refreshController =
       RefreshController(initialRefresh: false);
   final usuarios = [
-    Usuario(uid: '1', name: 'Mario', email: 'mario@email.com', online: true),
-    Usuario(uid: '1', name: 'Axel', email: 'axel@email.com', online: false),
-    Usuario(uid: '1', name: 'stela', email: 'stela@email.com', online: true),
-    Usuario(uid: '1', name: 'jonh', email: 'jonh@email.com', online: true),
+    Usuario(
+        id: '1',
+        name: 'Mario',
+        email: 'mario@email.com',
+        online: true,
+        registeredAt: new DateTime.now()),
+    Usuario(
+        id: '2',
+        name: 'Axel',
+        email: 'axel@email.com',
+        online: false,
+        registeredAt: new DateTime.now()),
+    Usuario(
+        id: 'evdrg4t3ge',
+        name: 'stela',
+        email: 'stela@email.com',
+        online: true,
+        registeredAt: new DateTime.now()),
+    Usuario(
+        id: '4',
+        name: 'jonh',
+        email: 'jonh@email.com',
+        online: true,
+        registeredAt: new DateTime.now()),
   ];
   @override
   Widget build(BuildContext context) {
+    final authService = Provider.of<AuthService>(context);
+    final usuario = authService.usuario;
     return Scaffold(
         appBar: AppBar(
           flexibleSpace: Positioned(
@@ -26,7 +50,7 @@ class _UsuariosPageState extends State<UsuariosPage> {
               margin: EdgeInsets.only(top: 45),
               child: new Center(
                   child: new Text(
-                'Mi nombre',
+                usuario.name,
                 style: TextStyle(color: Colors.black54, fontSize: 15),
               )),
             ),
@@ -38,7 +62,11 @@ class _UsuariosPageState extends State<UsuariosPage> {
                 Icons.exit_to_app,
                 color: Colors.black54,
               ),
-              onPressed: () {}),
+              onPressed: () {
+                //TODO: Desconectar el socket
+                AuthService.deleteToken();
+                Navigator.pushReplacementNamed(context, 'login');
+              }),
           actions: <Widget>[
             Container(
               margin: EdgeInsets.only(right: 10),

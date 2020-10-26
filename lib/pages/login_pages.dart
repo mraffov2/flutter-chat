@@ -1,4 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+import 'package:flutter_chat/services/auth_service.dart';
+
+import 'package:flutter_chat/helpers/show_modal.dart';
+
 import 'package:flutter_chat/widgets/button_login.dart';
 import 'package:flutter_chat/widgets/custom_input.dart';
 import 'package:flutter_chat/widgets/custon_logo.dart';
@@ -53,6 +59,7 @@ class __FormState extends State<_Form> {
   final passwordController = TextEditingController();
   @override
   Widget build(BuildContext context) {
+    final authService = Provider.of<AuthService>(context);
     return Container(
       margin: EdgeInsets.only(top: 40),
       padding: EdgeInsets.symmetric(horizontal: 50),
@@ -77,10 +84,22 @@ class __FormState extends State<_Form> {
           //Witget button
           ButtonLogin(
               text: 'Ingrese',
-              onPressed: () {
-                print(emailController.text);
-                print(passwordController.text);
-              }),
+              onPressed: (authService.loadingAuth ||
+                      (emailController.text == '' &&
+                          passwordController.text == ''))
+                  ? null
+                  : () {
+                      FocusScope.of(context).unfocus();
+                      authService.login(emailController.text.trim(),
+                          passwordController.text.trim());
+
+                      if (!authService.invalidCredencials) {
+                        Navigator.pushReplacementNamed(context, 'usuarios');
+                      } else {
+                        showModal(context, 'Login incorrecto',
+                            'Credenciales invalidas');
+                      }
+                    }),
         ],
       ),
     );
