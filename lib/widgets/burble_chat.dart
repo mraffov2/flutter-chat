@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+import 'package:flutter_chat/services/auth_service.dart';
 
 class BurbleChat extends StatelessWidget {
   final String texto;
@@ -14,13 +17,16 @@ class BurbleChat extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final authService = Provider.of<AuthService>(context);
     return FadeTransition(
         opacity: animationController,
         child: SizeTransition(
           sizeFactor: CurvedAnimation(
               parent: animationController, curve: Curves.easeOut),
           child: Container(
-              child: this.uid == '123' ? _myMessage() : _noMyMessage()),
+              child: this.uid == authService.usuario.id
+                  ? _myMessage()
+                  : _noMyMessage()),
         ));
   }
 

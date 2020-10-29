@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_chat/services/socket_service.dart';
 import 'package:provider/provider.dart';
 
 import 'package:flutter_chat/services/auth_service.dart';
@@ -60,6 +61,8 @@ class __FormState extends State<_Form> {
   @override
   Widget build(BuildContext context) {
     final authService = Provider.of<AuthService>(context);
+    final socketService = Provider.of<SocketService>(context);
+
     return Container(
       margin: EdgeInsets.only(top: 40),
       padding: EdgeInsets.symmetric(horizontal: 50),
@@ -94,6 +97,7 @@ class __FormState extends State<_Form> {
                           passwordController.text.trim());
 
                       if (!authService.invalidCredencials) {
+                        socketService.connect();
                         Navigator.pushReplacementNamed(context, 'usuarios');
                       } else {
                         showModal(context, 'Login incorrecto',

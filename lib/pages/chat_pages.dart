@@ -1,4 +1,10 @@
 import 'dart:io';
+import 'package:flutter_chat/models/mensajes_response.dart';
+import 'package:provider/provider.dart';
+
+import 'package:flutter_chat/services/auth_service.dart';
+import 'package:flutter_chat/services/socket_service.dart';
+import 'package:flutter_chat/services/chat_service.dart';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -13,31 +19,53 @@ class _ChatPageState extends State<ChatPage> with TickerProviderStateMixin {
   final _textController = new TextEditingController();
   final _focusNode = new FocusNode();
 
-  List<BurbleChat> _messages = [
-    // BurbleChat(
-    //   texto: 'Esto es un mensaje de prueba',
-    //   uid: '123',
-    // ),
-    // BurbleChat(
-    //   texto: 'Esto es un mensaje de prueba',
-    //   uid: '12345',
-    // ),
-    // BurbleChat(
-    //   texto:
-    //       'Esto es un mensaje de prueba prueba hola mundo esto es una prueba de texto largo para mensage',
-    //   uid: '123',
-    // ),
-    // BurbleChat(
-    //   texto:
-    //       'Esto es un mensaje de prueba prueba hola mundo esto es una prueba de texto largo para mensage',
-    //   uid: '12335',
-    // ),
-    // BurbleChat(
-    //   texto: 'Esto es un mensaje de prueba',
-    //   uid: '123',
-    // ),
-  ];
+  List<BurbleChat> _messages = [];
   bool isWriting = false;
+
+  ChatService chatService;
+  SocketService socketService;
+  AuthService authService;
+  @override
+  void initState() {
+    super.initState();
+    this.chatService = Provider.of<ChatService>(context, listen: false);
+    this.socketService = Provider.of<SocketService>(context, listen: false);
+    this.authService = Provider.of<AuthService>(context, listen: false);
+
+    this.socketService.socket.on('person-message', _listeningMessage);
+
+    _cargarHistorial(this.chatService.usuarioToWrite.id);
+  }
+
+  void _cargarHistorial(String id) async {
+    List<Message> chat = await this.chatService.getChat(id);
+
+    final history = chat.map((m) => new BurbleChat(
+        texto: m.message,
+        uid: m.from,
+        animationController: new AnimationController(
+            vsync: this, duration: Duration(milliseconds: 0))
+          ..forward()));
+
+    setState(() {
+      _messages.insertAll(0, history);
+    });
+  }
+
+  void _listeningMessage(dynamic payload) {
+    BurbleChat message = new BurbleChat(
+      texto: payload['message'],
+      uid: payload['to'],
+      animationController: AnimationController(
+          vsync: this, duration: Duration(milliseconds: 400)),
+    );
+
+    setState(() {
+      _messages.insert(0, message);
+    });
+    message.animationController.forward();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -47,7 +75,7 @@ class _ChatPageState extends State<ChatPage> with TickerProviderStateMixin {
             margin: EdgeInsets.only(top: 45),
             child: new Center(
                 child: new Text(
-              'Mario Villegas',
+              chatService.usuarioToWrite.name,
               style: TextStyle(color: Colors.black54, fontSize: 15),
             )),
           ),
@@ -156,7 +184,7 @@ class _ChatPageState extends State<ChatPage> with TickerProviderStateMixin {
     _focusNode.requestFocus();
 
     final newMessage = new BurbleChat(
-      uid: '123',
+      uid: authService.usuario.id,
       texto: texto,
       animationController: AnimationController(
           vsync: this, duration: Duration(milliseconds: 400)),
@@ -167,15 +195,21 @@ class _ChatPageState extends State<ChatPage> with TickerProviderStateMixin {
     setState(() {
       isWriting = false;
     });
+
+    this.socketService.emit('person-message', {
+      'from': authService.usuario.id,
+      'to': chatService.usuarioToWrite.id,
+      'message': texto
+    });
   }
 
   @override
   void dispose() {
-    // TODO: implement off socket
-
     for (BurbleChat messagge in _messages) {
       messagge.animationController.dispose();
     }
+
+    this.socketService.socket.off('person-message');
 
     super.dispose();
   }
